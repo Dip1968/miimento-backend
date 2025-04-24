@@ -1,3 +1,4 @@
+import re
 from urllib.parse import quote_plus
 from functools import lru_cache
 from pydantic import BaseModel
@@ -46,13 +47,19 @@ def generate_mongodb_uri(cred: TenantCredentials) -> str:
     password = quote_plus(cred.db_password)
     host = cred.db_host
     db_name = cred.db_name
-    extra_params = cred.extra_params
 
-    # Remove directConnection if it exists in extra_params
-    if "directConnection=true" in extra_params:
-        return f"mongodb://{username}:{password}@{host}?{extra_params}"
+    # Normalize extra_params: remove leading '?', fix casing
+    params = cred.extra_params.lstrip('?')
+    # If someone passed authsource (lowercase), correct it:
+    params = re.sub(r'(?i)\bauthsource=', 'authSource=', params)
 
-    return f"mongodb+srv://{username}:{password}@{host}/{db_name}?{extra_params}"
+    if ":" in host or "directConnection=true" in params:
+        # Local/native: single ?
+        return f"mongodb://{username}:{password}@{host}/{db_name}?{params}"
+
+    # Atlas:
+    return f"mongodb+srv://{username}:{password}@{host}/{db_name}?{params}"
+
 
 
 # @lru_cache()

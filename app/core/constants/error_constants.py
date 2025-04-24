@@ -25,4 +25,8 @@ ERROR_ENUMS = {
         "ErrorCode": 1003,
         "ErrorMessage": "An error occurred",
     },
+    "LOGIN": {  
+        "ErrorCode": 1004,
+        "ErrorMessage": "Login failed",
+    },
 }
