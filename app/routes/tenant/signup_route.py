@@ -16,7 +16,7 @@ def sign_up_route(data: SignUpReqModel, background_tasks: BackgroundTasks):
     return signup_controller.signup_controller(data, background_tasks)
 
 
-@sign_up_router.post("/sign_up_wizard/mentor")
+@sign_up_router.post("/signup_wizard_mentor")
 def sign_up_wizard_mentor_route(
     background_tasks: BackgroundTasks,
     verification_code: str = Form(...),
@@ -57,10 +57,13 @@ def sign_up_wizard_mentor_route(
     )
 
 
-@sign_up_router.post("/sign_up_wizard/institute")
+@sign_up_router.post("/signup_wizard_institute")
 def sign_up_wizard_institute_route(
     background_tasks: BackgroundTasks,
+    password: str = Form(...),
+    org_name: str = Form(...),
     verification_code: str = Form(...),
+    tenant_url_code: str = Form(...),
     logo: Optional[UploadFile] = File(None),
     address: str = Form(...),
     coordinator_name: Optional[str] = Form(None),
@@ -68,6 +71,9 @@ def sign_up_wizard_institute_route(
     coordinator_phone: Optional[str] = Form(None)
 ):
     data = InstituteSignUpWizardReqModel(
+        password=password,
+        org_name=org_name,
+        tenant_url_code=tenant_url_code,
         logo=logo.filename if logo else None,
         address=address,
         coordinator_name=coordinator_name,
@@ -79,7 +85,6 @@ def sign_up_wizard_institute_route(
         data=data, logo=logo, background_tasks=background_tasks
     )
 
-
-@sign_up_router.get("/validate_signup_email")
-def validate_signup_email_route(verification_code: str):
+@sign_up_router.get("/validate_sign_up_link/{verification_code}")
+def validate_sign_up_email_verification_link(verification_code: str):
     return signup_controller.validate_sign_up_email_link(verification_code)

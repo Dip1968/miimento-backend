@@ -100,7 +100,7 @@ def store_photo(file: UploadFile, data):
 
 
 def store_institute_logo(file: UploadFile, data):
-    resp = upload_file_util(file, tenant=data, file_type="logo")
+    resp = upload_file_util(file, tenant=data)
     return resp
 
 
@@ -164,6 +164,7 @@ def insert_institute_wizard_data(data: InstituteSignUpWizardReqModel):
             "org_name": 1,
             "logo": 1,
             "address": 1,
+            "tenant_url_code": 1,
             "coordinator_name": 1,
             "coordinator_email": 1,
             "coordinator_phone": 1,
@@ -171,7 +172,6 @@ def insert_institute_wizard_data(data: InstituteSignUpWizardReqModel):
             "is_reg_pending": 1,
             "is_tenant_db_generated": 1,
             "is_active": 1,
-            "plan_id": 1,
         },
         return_document=ReturnDocument.AFTER,
     )
@@ -179,15 +179,14 @@ def insert_institute_wizard_data(data: InstituteSignUpWizardReqModel):
 
 
 def signup_wizard_background_tasks(
-    tenant_url_code: str, person_name: str, user_info: dict, user_type: str
+    tenant_url_code: str, person_name: str, user_info: dict, user_type: str,password:str
 ):
-    tenant_creation_response = {}  # This would be populated based on subscription logic
     generate_tenant_database(
         tenant_url_code=tenant_url_code,
         person_name=person_name,
         user_info=user_info,
         user_type=user_type,
-        tenant_creation_response=tenant_creation_response,
+        password=password,
     )
     
 
@@ -196,7 +195,8 @@ def generate_tenant_database(
     person_name: str,
     user_info: dict,
     user_type: str,
-    tenant_creation_response,
+    password: str,
+
 ):
     try:
         db_cred = {
@@ -245,12 +245,11 @@ def generate_tenant_database(
         store_tenant_config(
             db_cred,
             user_info,
-            tenant_creation_response,
             user_type,
         )
         
         # Seed database with appropriate data based on user type
-        seed_tenant_data(db, user_info, user_type)
+        seed_tenant_data(db, user_info, user_type,password)
         
         # Send success email
         send_signup_success_email(user_info)
@@ -288,7 +287,7 @@ def create_atlas_user(username, password, db_name):
     return True
 
 
-def seed_tenant_data(tenant_db: Database, user_info: dict, user_type: str):
+def seed_tenant_data(tenant_db: Database, user_info: dict, user_type: str,password:str):
     # Seed roles based on user type
     source_roles_collection = super_db[SuperAdminCollections.ROLES_TEMPLATE]
     dest_roles_collection = tenant_db[TenantCollections.ROLES]
@@ -336,7 +335,7 @@ def seed_tenant_data(tenant_db: Database, user_info: dict, user_type: str):
             "certificates": user_info.get("certificates"),
             "achievements": user_info.get("achievements"),
             "linkedin_link": user_info.get("linkedin_link"),
-            "password": hash_password(generate_random_string(12)),  # Generate a random password that will be reset
+            "password": hash_password(password),  # Generate a random password that will be reset
             "role_id": str(admin_role["_id"]) if admin_role else None,
             "role_name": admin_role["role_name"] if admin_role else "Mentor",
             "user_type": "mentor",
@@ -354,7 +353,7 @@ def seed_tenant_data(tenant_db: Database, user_info: dict, user_type: str):
             "coordinator_name": user_info.get("coordinator_name"),
             "coordinator_email": user_info.get("coordinator_email"),
             "coordinator_phone": user_info.get("coordinator_phone"),
-            "password": hash_password(generate_random_string(12)),  # Generate a random password that will be reset
+            "password": hash_password(password),  # Generate a random password that will be reset
             "role_id": str(admin_role["_id"]) if admin_role else None,
             "role_name": admin_role["role_name"] if admin_role else "Institute Admin",
             "user_type": "institute",
@@ -387,34 +386,17 @@ def seed_tenant_data(tenant_db: Database, user_info: dict, user_type: str):
     )
 
 
-def store_tenant_config(db_cred, user_info, tenant_creation_response, user_type):
+def store_tenant_config(db_cred, user_info, user_type):
     tenant_config_collection = super_db[SuperAdminCollections.TENANTS_CONFIG]
-    
-    # Extract plan attributes from tenant creation response
-    subscribed_plan = (
-        tenant_creation_response.get("data", {})
-        .get("plan", {})
-        .get("subscribedPlan", {})
-    )
-    
-    # Create plan object structure
-    plan = {
-        "plan_name": subscribed_plan.get("plan_name", ""),
-        "plan_start_date": subscribed_plan.get("start_date", ""),
-        "plan_end_date": subscribed_plan.get("end_date", ""),
-        "plan_attributes": subscribed_plan.get("plan_attributes", []),
-    }
 
     # Base configuration
     config_data = {
         "tenant_id": user_info.get("id"),
         "tenant_url_code": user_info.get("tenant_url_code"),
         "user_type": user_type,
-        "api_key": str(uuid.uuid4()),
         "created_at": datetime.now(timezone.utc),
         "db_cred": db_cred,
         "is_tenant_owned_config": False,
-        "plan": plan,
     }
     
     tenant_config_collection.insert_one(config_data)

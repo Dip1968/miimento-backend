@@ -126,13 +126,15 @@ def sign_up_wizard_institute_controller(
             tenant_url_code=user_info.get("tenant_url_code"),
             person_name=user_info.get("name"),
             user_info=user_info,
-            user_type="institute"
+            user_type="institute",
+            password=data.password,
+
         )
 
         return resp_handler(
-            RESPONSE_CONSTANT["sign_up_wizard"].get("msg"),
+            RESPONSE_CONSTANT["sign_up_wizard_institute"].get("msg"),
             jsonable_encoder(user_info),
-            response_status_code=RESPONSE_CONSTANT["sign_up_wizard"].get("code"),
+            response_status_code=RESPONSE_CONSTANT["sign_up_wizard_institute"].get("code"),
         )
     except Exception as e:
         raise ExceptionHandler(

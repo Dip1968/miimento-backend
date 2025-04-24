@@ -31,30 +31,7 @@ class Settings(BaseModel):
     NEW_TENANT_ATLAS_PRIVATE_KEY: str
     NEW_TENANT_ATLAS_PROJECT_ID: str
     FILE_STORAGE_TYPE: Literal["local", "uploadCare", "S3"]
-    OPENAI_API_KEY: str
-    SYNO_ADMIN_HOST: str
-    BACKEND_URL: str
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_REGION_NAME: str
-    AWS_ATTACHMENT_BUCKET_NAME: str
-    PLAN_CACHE_EXPIRY_SECONDS: int
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_SERVER: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
-    TURNSTILE_SECRET_KEY: str
-    AMQP_URL: str
-    TASK_QUEUE: str
-    TASK_CONSUMER_QUEUE: str
-    RABBITMQ_HOST: str
-    RABBITMQ_PORT: int
-    RABBITMQ_USER: str
-    RABBITMQ_PASSWORD: str
-    RABBITMQ_VHOST: str
-    TASK_TYPE: str
-    CRON_JOB_API_KEY: str
+
 
 
 def load_env_file(env: str) -> dict:
